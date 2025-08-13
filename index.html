@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 90vh;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-header {
+            background: linear-gradient(90deg, #1a2a6c, #b21f1f);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .chat-header p {
+            opacity: 0.8;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: linear-gradient(90deg, #1a2a6c, #3a5fc9);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .ai-message {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .user-message .message-header i {
+            color: #89CFF0;
+            margin-right: 8px;
+        }
+
+        .ai-message .message-header i {
+            color: #FFD700;
+            margin-right: 8px;
+        }
+
+        .message-content {
+            font-size: 1.05rem;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-area {
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border-radius: 30px;
+            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            font-size: 1.05rem;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .chat-input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 2px rgba(26, 42, 108, 0.5);
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .send-button {
+            background: linear-gradient(90deg, #1a2a6c, #b21f1f);
+            color: white;
+            border: none;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(90deg, #2a3a9c, #c22f2f);
+        }
+
+        .send-button:active {
+            transform: scale(0.95);
+        }
+
+        .typing-indicator {
+            display: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 20px;
+            align-self: flex-start;
+            margin-top: 10px;
+            border-bottom-left-radius: 5px;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border-radius: 50%;
+            margin: 0 2px;
+            opacity: 0.4;
+            animation: typing-dots 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing-dots {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        .info-text {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 95vh;
+                border-radius: 15px;
+            }
+            
+            .chat-header h1 {
+                font-size: 1.4rem;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+            
+            .chat-input {
+                padding: 12px 18px;
+            }
+            
+            .send-button {
+                width: 50px;
+                height: 50px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .chat-container {
+                height: 98vh;
+                border-radius: 12px;
+            }
+            
+            .chat-header {
+                padding: 15px;
+            }
+            
+            .chat-history {
+                padding: 15px;
+            }
+            
+            .message {
+                padding: 12px 16px;
+            }
+            
+            .message-content {
+                font-size: 1rem;
+            }
+            
+            .chat-input-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1><i class="fas fa-robot"></i> AI Chat Assistant <div class="status-indicator"></div></h1>
+            <p>Powered by advanced AI technology - Ask me anything!</p>
+        </div>
+        
+        <div class="chat-history" id="chatHistory">
+            <div class="message ai-message">
+                <div class="message-header"><i class="fas fa-robot"></i> AI Assistant</div>
+                <div class="message-content">Hello! I'm your AI assistant. How can I help you today? Feel free to ask me anything - I'm here to assist with information, ideas, and problem-solving.</div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        
+        <div class="chat-input-container">
+            <div class="input-area">
+                <input type="text" class="chat-input" id="userInput" placeholder="Type your message here..." autocomplete="off">
+                <button class="send-button" id="sendButton"><i class="fas fa-paper-plane"></i></button>
+            </div>
+            <p class="info-text">Press Enter to send your message</p>
+        </div>
+    </div>
+
+    <script>
+        const chatHistory = document.getElementById('chatHistory');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        
+        // Sample responses to simulate AI
+        const aiResponses = [
+            "That's an interesting question. Based on my knowledge, I can tell you that...",
+            "I understand what you're asking. From my perspective, the best approach would be...",
+            "Thanks for your question! I've analyzed this topic and found that...",
+            "I'm glad you asked about that. Research indicates that...",
+            "That's a great point. Based on current data and trends...",
+            "I've considered your question carefully. The most effective solution appears to be...",
+            "Interesting perspective! My analysis suggests that...",
+            "I appreciate your curiosity about this topic. The key factors to consider are...",
+            "Based on the information available to me, I would recommend...",
+            "That's a complex question with multiple aspects. Let me break it down for you..."
+        ];
+        
+        // Sample topics for more specific responses
+        const topics = {
+            "weather": "I don't have real-time weather data access, but I can help you understand weather patterns or find resources to check current conditions.",
+            "time": "I don't have access to real-time clock data, but I can help you calculate time differences or explain timezone concepts.",
+            "name": "I'm an AI assistant created to help with information and problem-solving. You can call me whatever you like!",
+            "help": "I'm here to assist with information, ideas, and problem-solving. Ask me about science, technology, history, or anything you're curious about!",
+            "thank": "You're very welcome! I'm always here to help. Feel free to ask me anything else.",
+            "hello": "Hello again! How can I assist you today?",
+            "how are you": "I'm an AI, so I don't have feelings, but I'm functioning optimally and ready to help you!",
+            "joke": "Why don't scientists trust atoms? Because they make up everything! 😄",
+            "bye": "Goodbye! Feel free to return anytime you need assistance. Have a great day!",
+            "love": "As an AI, I don't experience emotions, but I'm programmed to be helpful and supportive!"
+        };
+        
+        // Function to add a new message to the chat
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(sender + '-message');
+            
+            const senderName = sender === 'user' ? 'You' : 'AI Assistant';
+            const icon = sender === 'user' ? 'fas fa-user' : 'fas fa-robot';
+            
+            messageDiv.innerHTML = `
+                <div class="message-header"><i class="${icon}"></i> ${senderName}</div>
+                <div class="message-content">${text}</div>
+            `;
+            
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+        
+        // Function to get a response from the "AI"
+        function getAIResponse(userMessage) {
+            userMessage = userMessage.toLowerCase();
+            
+            // Check for specific topics
+            for (const [keyword, response] of Object.entries(topics)) {
+                if (userMessage.includes(keyword)) {
+                    return response;
+                }
+            }
+            
+            // Default response
+            const randomIndex = Math.floor(Math.random() * aiResponses.length);
+            return aiResponses[randomIndex];
+        }
+        
+        // Function to simulate AI typing
+        function simulateTyping(response) {
+            typingIndicator.style.display = 'block';
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+                addMessage('ai', response);
+            }, 1500 + Math.random() * 1000);
+        }
+        
+        // Function to handle user message
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+            
+            addMessage('user', message);
+            userInput.value = '';
+            
+            // Show typing indicator and get response after delay
+            setTimeout(() => {
+                const response = getAIResponse(message);
+                simulateTyping(response);
+            }, 500);
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Initial focus on input
+        userInput.focus();
+    </script>
+</body>
+</html>
